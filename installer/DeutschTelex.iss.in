@@ -1,0 +1,64 @@
+#define AppName "DeutschTelex"
+#define AppVersion "@PROJECT_VERSION@"
+#define AppExeName "DeutschTelex.exe"
+
+[Setup]
+AppId={{A466DDFB-614D-43F0-A51E-00FC18D9394D}
+AppName={#AppName}
+AppVersion={#AppVersion}
+AppVerName={#AppName} {#AppVersion}
+AppPublisher=DeutschTelex Project
+DefaultDirName={localappdata}\Programs\DeutschTelex
+DefaultGroupName=DeutschTelex
+DisableProgramGroupPage=yes
+PrivilegesRequired=lowest
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+OutputDir=@CMAKE_CURRENT_SOURCE_DIR@/dist
+OutputBaseFilename=DeutschTelex-{#AppVersion}-win64-setup
+SetupIconFile=@CMAKE_CURRENT_SOURCE_DIR@/src/resources/de-language-icon.ico
+UninstallDisplayIcon={app}\{#AppExeName}
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+CloseApplications=yes
+RestartApplications=no
+AppMutex=Local\DeutschTelex.Phase2.Singleton
+VersionInfoVersion=@PROJECT_VERSION@.0
+VersionInfoCompany=DeutschTelex Project
+VersionInfoDescription=DeutschTelex Setup
+VersionInfoProductName=DeutschTelex
+VersionInfoProductVersion=@PROJECT_VERSION@
+
+[Files]
+Source: "@CMAKE_CURRENT_BINARY_DIR@\DeutschTelex.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "@CMAKE_CURRENT_SOURCE_DIR@\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "@CMAKE_CURRENT_SOURCE_DIR@\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "@CMAKE_CURRENT_SOURCE_DIR@\docs\release-0.6.0.md"; DestDir: "{app}"; Flags: ignoreversion
+
+[Icons]
+Name: "{userprograms}\DeutschTelex"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
+
+[Run]
+Filename: "{app}\{#AppExeName}"; Description: "Launch DeutschTelex"; Flags: nowait postinstall skipifsilent unchecked
+
+[Code]
+const
+  RunKey = 'Software\Microsoft\Windows\CurrentVersion\Run';
+  RunValue = 'DeutschTelex';
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  RegisteredCommand: string;
+  InstalledCommand: string;
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    InstalledCommand := '"' + ExpandConstant('{app}\{#AppExeName}') + '"';
+    if RegQueryStringValue(HKCU, RunKey, RunValue, RegisteredCommand) then
+    begin
+      if CompareText(RegisteredCommand, InstalledCommand) = 0 then
+        RegDeleteValue(HKCU, RunKey, RunValue);
+    end;
+  end;
+end;

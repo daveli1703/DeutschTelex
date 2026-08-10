@@ -1,1 +1,9 @@
 /build*/
+/dist/
+/.vs/
+*.user
+*.o
+*.obj
+settings.ini
+*.pfx
+*.p12

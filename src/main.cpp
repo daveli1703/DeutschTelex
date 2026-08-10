@@ -1,10 +1,27 @@
 #include "app/tray_app.h"
 
-#include <string_view>
+#include <cwchar>
 
-int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR command_line, int) {
-    const std::wstring_view arguments{command_line == nullptr ? L"" : command_line};
-    const bool smoke_test = arguments == L"--hook-smoke-test";
+#include <shellapi.h>
+
+namespace {
+
+bool IsHookSmokeTestInvocation() noexcept {
+    int argument_count{};
+    PWSTR* const arguments = CommandLineToArgvW(GetCommandLineW(), &argument_count);
+    if (arguments == nullptr) {
+        return false;
+    }
+    const bool smoke_test = argument_count == 2 &&
+                            std::wcscmp(arguments[1], L"--hook-smoke-test") == 0;
+    LocalFree(arguments);
+    return smoke_test;
+}
+
+}  // namespace
+
+int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
+    const bool smoke_test = IsHookSmokeTestInvocation();
     deutschtelex::app::TrayApp application{instance};
     if (!application.Initialize(smoke_test)) {
         return 1;

@@ -1,4 +1,5 @@
 #include "app/tray_app.h"
+#include "deutschtelex_version.h"
 #include "resources/resource.h"
 
 #include <shellapi.h>
@@ -6,6 +7,7 @@
 #include <strsafe.h>
 
 #include <iterator>
+#include <string>
 
 namespace deutschtelex::app {
 namespace {
@@ -382,12 +384,13 @@ void TrayApp::ShowHotkeyUnavailableNotification() noexcept {
 }
 
 void TrayApp::ShowAbout() noexcept {
-    MessageBoxW(window_,
-                L"DeutschTelex\n\n"
-                L"A lightweight UniKey-inspired German Telex input method.\n\n"
-                L"Version 0.5 development build\n\n"
-                L"ae -> \u00E4\noe -> \u00F6\nue -> \u00FC\nsz -> \u00DF\n\n"
-                L"No telemetry.\nNo typed-text logging.",
+    std::wstring about =
+        L"DeutschTelex\n\n"
+        L"A lightweight UniKey-inspired German Telex input method.\n\nVersion ";
+    about.append(version::kWideString);
+    about.append(L"\n\nae -> \u00E4\noe -> \u00F6\nue -> \u00FC\nsz -> \u00DF\n\n"
+                 L"No telemetry.\nNo typed-text logging.");
+    MessageBoxW(window_, about.c_str(),
                 kWindowTitle, MB_OK | MB_ICONINFORMATION);
 }
 
