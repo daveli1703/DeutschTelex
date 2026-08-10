@@ -1,0 +1,19 @@
+#pragma once
+
+#include <string_view>
+
+namespace deutschtelex::version {
+
+inline constexpr int kMajor = @PROJECT_VERSION_MAJOR@;
+inline constexpr int kMinor = @PROJECT_VERSION_MINOR@;
+inline constexpr int kPatch = @PROJECT_VERSION_PATCH@;
+inline constexpr std::string_view kString = "@PROJECT_VERSION@";
+inline constexpr std::wstring_view kWideString = L"@PROJECT_VERSION@";
+inline constexpr std::string_view kPortableDirectoryName =
+    "DeutschTelex-@PROJECT_VERSION@-win64";
+inline constexpr std::string_view kPortableArchiveName =
+    "DeutschTelex-@PROJECT_VERSION@-win64-portable.zip";
+inline constexpr std::string_view kInstallerName =
+    "DeutschTelex-@PROJECT_VERSION@-win64-setup.exe";
+
+}  // namespace deutschtelex::version

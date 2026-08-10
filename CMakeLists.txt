@@ -1,8 +1,22 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(DeutschTelex VERSION 0.1.0 LANGUAGES CXX)
+project(DeutschTelex VERSION 0.6.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(DEUTSCHTELEX_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+file(MAKE_DIRECTORY "${DEUTSCHTELEX_GENERATED_DIR}")
+configure_file(
+    src/version.h.in
+    "${DEUTSCHTELEX_GENERATED_DIR}/deutschtelex_version.h"
+    @ONLY
+)
+
+add_library(deutschtelex_version INTERFACE)
+target_include_directories(deutschtelex_version
+    INTERFACE
+        "${DEUTSCHTELEX_GENERATED_DIR}"
+)
 
 function(deutschtelex_enable_warnings target)
     if(MSVC)
@@ -36,6 +50,16 @@ deutschtelex_enable_warnings(deutschtelex_core)
 
 if(WIN32)
     enable_language(RC)
+    configure_file(
+        src/resources/deutschtelex.rc.in
+        "${DEUTSCHTELEX_GENERATED_DIR}/deutschtelex.rc"
+        @ONLY
+    )
+    configure_file(
+        installer/DeutschTelex.iss.in
+        "${DEUTSCHTELEX_GENERATED_DIR}/DeutschTelex.iss"
+        @ONLY
+    )
 
     add_library(deutschtelex_win32
         src/win32/foreground_app.cpp
@@ -64,12 +88,12 @@ if(WIN32)
     )
     target_compile_features(deutschtelex_app PUBLIC cxx_std_20)
     target_link_libraries(deutschtelex_app PUBLIC deutschtelex_config deutschtelex_win32
-        Shell32 Ole32)
+        deutschtelex_version Shell32 Ole32)
     deutschtelex_enable_warnings(deutschtelex_app)
 
     add_executable(DeutschTelex WIN32
         src/main.cpp
-        src/resources/deutschtelex.rc
+        "${DEUTSCHTELEX_GENERATED_DIR}/deutschtelex.rc"
     )
     target_compile_features(DeutschTelex PRIVATE cxx_std_20)
     target_link_libraries(DeutschTelex PRIVATE deutschtelex_app)
@@ -82,6 +106,14 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    add_executable(deutschtelex_version_tests
+        tests/version_tests.cpp
+    )
+    target_link_libraries(deutschtelex_version_tests PRIVATE deutschtelex_version)
+    target_compile_features(deutschtelex_version_tests PRIVATE cxx_std_20)
+    deutschtelex_enable_warnings(deutschtelex_version_tests)
+    add_test(NAME release_metadata COMMAND deutschtelex_version_tests)
+
     add_executable(deutschtelex_config_tests
         tests/settings_store_tests.cpp
     )
