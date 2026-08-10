@@ -3,6 +3,7 @@
 #include "win32/input_injector.h"
 #include "win32/key_decoder.h"
 #include "win32/keyboard_hook.h"
+#include "win32/startup_registration.h"
 
 #include <array>
 #include <iostream>
@@ -61,6 +62,8 @@ int main() {
         runner.Check(TooltipFor(false) == L"DeutschTelex \u2014 OFF", "OFF tooltip is accurate");
         runner.Check(CommandFromId(deutschtelex::app::kCommandToggle) == Command::Toggle,
                      "toggle command ID maps to Toggle");
+        runner.Check(CommandFromId(deutschtelex::app::kCommandSettings) == Command::Settings,
+                     "settings command ID maps to Settings");
         runner.Check(CommandFromId(deutschtelex::app::kCommandAbout) == Command::About,
                      "about command ID maps to About");
         runner.Check(CommandFromId(deutschtelex::app::kCommandExit) == Command::Exit,
@@ -68,6 +71,27 @@ int main() {
         runner.Check(CommandFromId(0) == Command::None,
                      "unknown command ID maps to None");
     }
+
+    runner.Check(deutschtelex::win32::QuoteStartupCommand(
+                     L"C:\\Program Files\\DeutschTelex\\DeutschTelex.exe") ==
+                     L"\"C:\\Program Files\\DeutschTelex\\DeutschTelex.exe\"",
+                 "startup command safely quotes a path containing spaces");
+    runner.Check(deutschtelex::win32::QuoteStartupCommand(L"C:\\DeutschTelex.exe") ==
+                     L"\"C:\\DeutschTelex.exe\"",
+                 "startup command consistently quotes a simple path");
+    runner.Check(deutschtelex::win32::PlanStartupChange(true, false, false)
+                         .change_required,
+                 "startup plan enables a missing registration");
+    runner.Check(!deutschtelex::win32::PlanStartupChange(true, false, true)
+                          .change_required,
+                 "startup plan preserves an already enabled registration");
+    const auto rollback_plan =
+        deutschtelex::win32::PlanStartupChange(false, false, true);
+    runner.Check(rollback_plan.change_required && rollback_plan.rollback_enabled,
+                 "startup plan remembers actual state for rollback");
+    runner.Check(!deutschtelex::win32::PlanStartupChange(false, false, std::nullopt)
+                          .change_required,
+                 "startup plan safely falls back to persisted state after query failure");
 
     constexpr std::array reset_keys{
         VK_BACK, VK_DELETE, VK_RETURN, VK_TAB, VK_ESCAPE, VK_LEFT, VK_RIGHT,

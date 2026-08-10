@@ -29,8 +29,11 @@ Action TransformEngine::Process(const char32_t input) noexcept {
         return static_cast<std::size_t>(id) - 1U;
     };
 
-    const auto rule_for_prefix = [](const char32_t character) noexcept -> RuleId {
+    const auto rule_for_prefix = [this](const char32_t character) noexcept -> RuleId {
         for (std::size_t index = 0; index < kRules.size(); ++index) {
+            if (index == kRules.size() - 1U && !config_.enable_eszett) {
+                continue;
+            }
             if (kRules[index].first == character) {
                 return static_cast<RuleId>(index + 1U);
             }
@@ -62,6 +65,15 @@ Action TransformEngine::Process(const char32_t input) noexcept {
     rule_ = rule_for_prefix(input);
     stage_ = rule_ == RuleId::None ? Stage::Idle : Stage::Prefix;
     return Action::Pass();
+}
+
+void TransformEngine::SetConfig(const TransformConfig config) noexcept {
+    config_ = config;
+    Reset();
+}
+
+TransformConfig TransformEngine::Config() const noexcept {
+    return config_;
 }
 
 TransformEngine::Snapshot TransformEngine::Capture() const noexcept {

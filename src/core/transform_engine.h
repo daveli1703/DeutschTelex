@@ -31,6 +31,12 @@ struct Action {
     }
 };
 
+struct TransformConfig {
+    bool enable_eszett{true};
+
+    bool operator==(const TransformConfig&) const = default;
+};
+
 class TransformEngine {
 public:
     class Snapshot {
@@ -50,6 +56,11 @@ public:
     // Processes exactly one Unicode code point and returns the semantic edit
     // that the platform adapter must apply for that input.
     [[nodiscard]] Action Process(char32_t input) noexcept;
+
+    // Configuration is semantic input state. Applying it always starts a new,
+    // clean sequence so a prefix captured under an old rule set cannot leak.
+    void SetConfig(TransformConfig config) noexcept;
+    [[nodiscard]] TransformConfig Config() const noexcept;
 
     // Captures/restores only the finite-state-machine state. A Snapshot holds
     // no input text and is cheap to copy.
@@ -82,6 +93,7 @@ private:
 
     Stage stage_{Stage::Idle};
     RuleId rule_{RuleId::None};
+    TransformConfig config_{};
 };
 
 // Supports exactly one safe correction: a pending prefix, one printable typo,

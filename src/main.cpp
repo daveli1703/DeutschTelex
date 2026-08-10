@@ -3,13 +3,14 @@
 #include <string_view>
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR command_line, int) {
+    const std::wstring_view arguments{command_line == nullptr ? L"" : command_line};
+    const bool smoke_test = arguments == L"--hook-smoke-test";
     deutschtelex::app::TrayApp application{instance};
-    if (!application.Initialize()) {
+    if (!application.Initialize(smoke_test)) {
         return 1;
     }
 
-    const std::wstring_view arguments{command_line == nullptr ? L"" : command_line};
-    if (arguments == L"--hook-smoke-test") {
+    if (smoke_test) {
         application.Shutdown();
         return 0;
     }
