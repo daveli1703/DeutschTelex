@@ -24,7 +24,7 @@ bool KeyboardHook::Install() noexcept {
 
     ResetEngineAndInvalidateCheckpoint();
     suppressed_key_ups_.reset();
-    foreground_window_ = GetForegroundWindow();
+    RefreshForegroundContext();
     modifiers_.InitializeFromSystem();
 
     hook_ = SetWindowsHookExW(WH_KEYBOARD_LL, HookProcedure, GetModuleHandleW(nullptr), 0);
@@ -52,6 +52,7 @@ bool KeyboardHook::Uninstall() noexcept {
     }
     ResetEngineAndInvalidateCheckpoint();
     suppressed_key_ups_.reset();
+    foreground_context_.Clear();
     return succeeded;
 }
 
@@ -63,7 +64,7 @@ void KeyboardHook::SetEnabled(const bool enabled) noexcept {
     enabled_ = enabled;
     ResetEngineAndInvalidateCheckpoint();
     suppressed_key_ups_.reset();
-    foreground_window_ = GetForegroundWindow();
+    RefreshForegroundContext();
     if (enabled_) {
         modifiers_.InitializeFromSystem();
     }
@@ -77,7 +78,15 @@ void KeyboardHook::SetTransformConfig(const core::TransformConfig config) noexce
     engine_.SetConfig(config);
     typo_checkpoint_.Invalidate();
     suppressed_key_ups_.reset();
-    foreground_window_ = GetForegroundWindow();
+    RefreshForegroundContext();
+}
+
+void KeyboardHook::SetDisableInVisualStudioCode(const bool disabled) noexcept {
+    disable_in_vscode_ = disabled;
+    ResetEngineAndInvalidateCheckpoint();
+    suppressed_key_ups_.reset();
+    RefreshForegroundContext();
+    modifiers_.InitializeFromSystem();
 }
 
 LRESULT CALLBACK KeyboardHook::HookProcedure(const int code, const WPARAM message,
@@ -115,9 +124,26 @@ LRESULT KeyboardHook::Handle(const WPARAM message, const KBDLLHOOKSTRUCT& event)
     }
 
     const HWND current_foreground = GetForegroundWindow();
-    if (current_foreground != foreground_window_) {
-        foreground_window_ = current_foreground;
+    if (current_foreground != foreground_context_.Window()) {
+        const ForegroundAppIdentity identity = disable_in_vscode_
+                                                   ? IdentifyForegroundApp(current_foreground)
+                                                   : ForegroundAppIdentity::Other;
+        static_cast<void>(foreground_context_.Update(current_foreground, identity));
         ResetEngineAndInvalidateCheckpoint();
+    }
+
+    if (ShouldBypassInput(enabled_, disable_in_vscode_, foreground_context_.Identity())) {
+        static_cast<void>(modifiers_.Update(event.vkCode, key_down));
+        if (event.vkCode < suppressed_key_ups_.size()) {
+            if (key_up && suppressed_key_ups_.test(event.vkCode)) {
+                suppressed_key_ups_.reset(event.vkCode);
+                return 1;
+            }
+            if (key_down) {
+                suppressed_key_ups_.reset(event.vkCode);
+            }
+        }
+        return PassThrough(HC_ACTION, message, event_data);
     }
 
     const ModifierEvent modifier_event = modifiers_.Update(event.vkCode, key_down);
@@ -183,6 +209,14 @@ LRESULT KeyboardHook::Handle(const WPARAM message, const KBDLLHOOKSTRUCT& event)
 void KeyboardHook::ResetEngineAndInvalidateCheckpoint() noexcept {
     engine_.Reset();
     typo_checkpoint_.Invalidate();
+}
+
+void KeyboardHook::RefreshForegroundContext() noexcept {
+    const HWND current_foreground = GetForegroundWindow();
+    const ForegroundAppIdentity identity = disable_in_vscode_
+                                               ? IdentifyForegroundApp(current_foreground)
+                                               : ForegroundAppIdentity::Other;
+    static_cast<void>(foreground_context_.Update(current_foreground, identity));
 }
 
 LRESULT KeyboardHook::PassThrough(const int code, const WPARAM message,

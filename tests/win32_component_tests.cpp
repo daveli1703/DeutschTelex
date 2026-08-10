@@ -1,5 +1,6 @@
 #include "app/tray_app.h"
 #include "core/transform_engine.h"
+#include "win32/foreground_app.h"
 #include "win32/input_injector.h"
 #include "win32/key_decoder.h"
 #include "win32/keyboard_hook.h"
@@ -8,6 +9,7 @@
 #include <array>
 #include <iostream>
 #include <string_view>
+#include <utility>
 
 namespace {
 
@@ -18,6 +20,8 @@ using deutschtelex::app::CommandFromId;
 using deutschtelex::app::EnabledState;
 using deutschtelex::app::TooltipFor;
 using deutschtelex::win32::BuildReplacementBatch;
+using deutschtelex::win32::ForegroundAppIdentity;
+using deutschtelex::win32::ForegroundContextCache;
 using deutschtelex::win32::InjectionBatch;
 using deutschtelex::win32::InjectionOrigin;
 using deutschtelex::win32::IsResetKey;
@@ -51,6 +55,84 @@ bool AllEventsTagged(const InjectionBatch& batch, const ULONG_PTR marker) {
 
 int main() {
     TestRunner runner;
+
+    const std::array vscode_name_cases{
+        std::pair{L"Code.exe", true},
+        std::pair{L"code.exe", true},
+        std::pair{L"CODE.EXE", true},
+        std::pair{L"Notepad.exe", false},
+        std::pair{L"chrome.exe", false},
+        std::pair{L"devenv.exe", false},
+        std::pair{L"WindowsTerminal.exe", false},
+        std::pair{L"MyCode.exe", false},
+        std::pair{L"CodeHelper.exe", false},
+        std::pair{L"code.exe.backup", false},
+    };
+    for (const auto& [name, expected] : vscode_name_cases) {
+        runner.Check(deutschtelex::win32::IsVisualStudioCodeExecutable(name) == expected,
+                     "VS Code executable name matches exactly and case-insensitively");
+    }
+
+    runner.Check(!deutschtelex::win32::ShouldBypassInput(
+                     true, false, ForegroundAppIdentity::VisualStudioCode),
+                 "global ON with VS Code exclusion OFF allows transformation");
+    runner.Check(deutschtelex::win32::ShouldBypassInput(
+                     true, true, ForegroundAppIdentity::VisualStudioCode),
+                 "global ON with VS Code exclusion ON bypasses VS Code");
+    runner.Check(!deutschtelex::win32::ShouldBypassInput(
+                     true, true, ForegroundAppIdentity::Other),
+                 "global ON with VS Code exclusion ON allows other applications");
+    runner.Check(deutschtelex::win32::ShouldBypassInput(
+                     false, false, ForegroundAppIdentity::Other),
+                 "global OFF bypasses a normal application");
+    runner.Check(deutschtelex::win32::ShouldBypassInput(
+                     false, true, ForegroundAppIdentity::VisualStudioCode),
+                 "global OFF bypasses excluded VS Code");
+    runner.Check(deutschtelex::win32::ShouldBypassInput(
+                     true, true, ForegroundAppIdentity::Unknown),
+                 "unresolved identity conservatively bypasses when exclusion is enabled");
+
+    const HWND normal_window = reinterpret_cast<HWND>(static_cast<ULONG_PTR>(1));
+    const HWND vscode_window = reinterpret_cast<HWND>(static_cast<ULONG_PTR>(2));
+    {
+        ForegroundContextCache context;
+        runner.Check(context.Update(normal_window, ForegroundAppIdentity::Other),
+                     "first foreground context is a transition");
+        runner.Check(!context.Update(normal_window, ForegroundAppIdentity::Other),
+                     "unchanged foreground context reuses cache");
+        runner.Check(context.Update(vscode_window, ForegroundAppIdentity::VisualStudioCode),
+                     "normal to VS Code is a context transition");
+        runner.Check(context.Identity() == ForegroundAppIdentity::VisualStudioCode,
+                     "foreground cache retains only current coarse identity");
+        context.Clear();
+        runner.Check(context.Window() == nullptr &&
+                         context.Identity() == ForegroundAppIdentity::Unknown,
+                     "clearing foreground cache removes current identity");
+    }
+
+    {
+        deutschtelex::core::TransformEngine engine;
+        ForegroundContextCache context;
+        static_cast<void>(context.Update(normal_window, ForegroundAppIdentity::Other));
+        static_cast<void>(engine.Process(U'a'));
+        if (context.Update(vscode_window, ForegroundAppIdentity::VisualStudioCode)) {
+            engine.Reset();
+        }
+        runner.Check(engine.Process(U'e').kind == ActionKind::Pass,
+                     "normal to excluded transition resets pending prefix");
+    }
+
+    {
+        deutschtelex::core::TransformEngine engine;
+        ForegroundContextCache context;
+        static_cast<void>(context.Update(vscode_window,
+                                         ForegroundAppIdentity::VisualStudioCode));
+        if (context.Update(normal_window, ForegroundAppIdentity::Other)) {
+            engine.Reset();
+        }
+        runner.Check(engine.Process(U'e').kind == ActionKind::Pass,
+                     "excluded to normal transition starts with clean engine state");
+    }
 
     {
         EnabledState enabled_state;

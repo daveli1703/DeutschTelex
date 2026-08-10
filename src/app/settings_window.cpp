@@ -9,8 +9,9 @@ constexpr int kDefaultsButton = 2001;
 constexpr int kStartWithWindowsCheckbox = 2101;
 constexpr int kShowNotificationsCheckbox = 2102;
 constexpr int kEnableEszettCheckbox = 2103;
+constexpr int kDisableInVSCodeCheckbox = 2104;
 constexpr int kClientWidth = 430;
-constexpr int kClientHeight = 390;
+constexpr int kClientHeight = 475;
 
 void SetChecked(const HWND control, const bool checked) noexcept {
     SendMessageW(control, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
@@ -160,24 +161,32 @@ bool SettingsWindow::CreateControls() noexcept {
     enable_eszett_ = CreateControl(L"BUTTON", L"Enable sz \u2192 \u00DF", checkbox_style,
                                    30, 181, 350, 22, kEnableEszettCheckbox);
 
+    if (CreateControl(L"BUTTON", L"APPLICATIONS", group_style,
+                      15, 232, 400, 70, 0) == nullptr) {
+        return false;
+    }
+    disable_in_vscode_ = CreateControl(
+        L"BUTTON", L"Disable DeutschTelex in Visual Studio Code", checkbox_style,
+        30, 260, 360, 22, kDisableInVSCodeCheckbox);
+
     if (CreateControl(L"BUTTON", L"KEYBOARD SHORTCUT", group_style,
-                      15, 232, 400, 70, 0) == nullptr ||
+                      15, 312, 400, 70, 0) == nullptr ||
         CreateControl(L"STATIC", L"Toggle DeutschTelex:    Ctrl + Alt + G",
-                      static_style, 30, 260, 360, 22, 0) == nullptr) {
+                      static_style, 30, 340, 360, 22, 0) == nullptr) {
         return false;
     }
 
     if (CreateControl(L"BUTTON", L"Defaults", button_style,
-                      126, 330, 85, 28, kDefaultsButton) == nullptr ||
+                      126, 415, 85, 28, kDefaultsButton) == nullptr ||
         CreateControl(L"BUTTON", L"Cancel", button_style,
-                      218, 330, 85, 28, IDCANCEL) == nullptr ||
+                      218, 415, 85, 28, IDCANCEL) == nullptr ||
         CreateControl(L"BUTTON", L"Save", button_style | BS_DEFPUSHBUTTON,
-                      310, 330, 85, 28, IDOK) == nullptr) {
+                      310, 415, 85, 28, IDOK) == nullptr) {
         return false;
     }
 
     if (start_with_windows_ == nullptr || show_notifications_ == nullptr ||
-        enable_eszett_ == nullptr) {
+        enable_eszett_ == nullptr || disable_in_vscode_ == nullptr) {
         return false;
     }
     PopulateControls(opening_settings_);
@@ -202,6 +211,7 @@ void SettingsWindow::PopulateControls(const config::AppSettings& settings) noexc
     SetChecked(start_with_windows_, settings.start_with_windows);
     SetChecked(show_notifications_, settings.show_toggle_notifications);
     SetChecked(enable_eszett_, settings.enable_eszett);
+    SetChecked(disable_in_vscode_, settings.disable_in_vscode);
 }
 
 config::AppSettings SettingsWindow::ReadControls() const noexcept {
@@ -209,6 +219,7 @@ config::AppSettings SettingsWindow::ReadControls() const noexcept {
         IsChecked(start_with_windows_),
         IsChecked(show_notifications_),
         IsChecked(enable_eszett_),
+        IsChecked(disable_in_vscode_),
     };
 }
 

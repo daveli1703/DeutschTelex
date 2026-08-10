@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/transform_engine.h"
+#include "win32/foreground_app.h"
 #include "win32/input_injector.h"
 #include "win32/key_decoder.h"
 
@@ -33,19 +34,22 @@ public:
     void SetEnabled(bool enabled) noexcept;
     [[nodiscard]] bool IsEnabled() const noexcept;
     void SetTransformConfig(core::TransformConfig config) noexcept;
+    void SetDisableInVisualStudioCode(bool disabled) noexcept;
 
 private:
     static LRESULT CALLBACK HookProcedure(int code, WPARAM message, LPARAM data) noexcept;
     [[nodiscard]] LRESULT Handle(WPARAM message, const KBDLLHOOKSTRUCT& event) noexcept;
     [[nodiscard]] LRESULT PassThrough(int code, WPARAM message, LPARAM data) const noexcept;
     void ResetEngineAndInvalidateCheckpoint() noexcept;
+    void RefreshForegroundContext() noexcept;
 
     static KeyboardHook* active_instance_;
 
     HHOOK hook_{};
-    HWND foreground_window_{};
     DWORD last_error_{};
     bool enabled_{true};
+    bool disable_in_vscode_{};
+    ForegroundContextCache foreground_context_;
     core::TransformEngine engine_;
     core::SingleTypoCheckpoint typo_checkpoint_;
     ModifierState modifiers_;

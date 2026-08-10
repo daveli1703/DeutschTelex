@@ -6,6 +6,7 @@ struct AppSettings {
     bool start_with_windows{false};
     bool show_toggle_notifications{true};
     bool enable_eszett{true};
+    bool disable_in_vscode{false};
 
     bool operator==(const AppSettings&) const = default;
 };

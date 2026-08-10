@@ -38,6 +38,7 @@ if(WIN32)
     enable_language(RC)
 
     add_library(deutschtelex_win32
+        src/win32/foreground_app.cpp
         src/win32/input_injector.cpp
         src/win32/key_decoder.cpp
         src/win32/keyboard_hook.cpp
