@@ -17,6 +17,7 @@ namespace {
 using deutschtelex::core::Action;
 using deutschtelex::core::ActionKind;
 using deutschtelex::core::SingleTypoCheckpoint;
+using deutschtelex::core::TransformConfig;
 using deutschtelex::core::TransformEngine;
 
 struct TestRunner {
@@ -66,6 +67,17 @@ void Apply(std::u32string& output, const char32_t input, const Action& action) {
 
 std::u32string Transform(const std::u32string_view input) {
     TransformEngine engine;
+    std::u32string output;
+    for (const char32_t character : input) {
+        Apply(output, character, engine.Process(character));
+    }
+    return output;
+}
+
+std::u32string TransformWithConfig(const std::u32string_view input,
+                                   const TransformConfig config) {
+    TransformEngine engine;
+    engine.SetConfig(config);
     std::u32string output;
     for (const char32_t character : input) {
         Apply(output, character, engine.Process(character));
@@ -171,6 +183,32 @@ void CheckSingleTypoCorrection(TestRunner& runner, const char32_t prefix,
 
 int main() {
     TestRunner runner;
+
+    {
+        TransformEngine engine;
+        runner.Check(engine.Config().enable_eszett,
+                     "eszett transformation defaults to enabled");
+        runner.Check(TransformWithConfig(U"sz", {true}) == U"\u00DF",
+                     "enabled eszett config converts sz");
+        runner.Check(TransformWithConfig(U"szz", {true}) == U"sz",
+                     "enabled eszett config escapes szz");
+        runner.Check(TransformWithConfig(U"sz", {false}) == U"sz",
+                     "disabled eszett config leaves sz literal");
+        runner.Check(TransformWithConfig(U"szz", {false}) == U"szz",
+                     "disabled eszett config leaves szz literal");
+        runner.Check(TransformWithConfig(U"ae oe ue", {false}) ==
+                         U"\u00E4 \u00F6 \u00FC",
+                     "umlaut rules remain active while eszett is disabled");
+
+        std::u32string output;
+        Apply(output, U's', engine.Process(U's'));
+        engine.SetConfig({false});
+        Apply(output, U'z', engine.Process(U'z'));
+        runner.Check(output == U"sz",
+                     "changing transform config resets a pending s prefix");
+        runner.Check(!engine.Config().enable_eszett,
+                     "engine reports the applied eszett config");
+    }
 
     const std::array basic_cases{
         std::pair{U"ae", U"\u00E4"},

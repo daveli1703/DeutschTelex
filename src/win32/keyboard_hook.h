@@ -32,6 +32,7 @@ public:
     [[nodiscard]] DWORD LastErrorCode() const noexcept;
     void SetEnabled(bool enabled) noexcept;
     [[nodiscard]] bool IsEnabled() const noexcept;
+    void SetTransformConfig(core::TransformConfig config) noexcept;
 
 private:
     static LRESULT CALLBACK HookProcedure(int code, WPARAM message, LPARAM data) noexcept;

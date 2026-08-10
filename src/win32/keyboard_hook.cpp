@@ -73,6 +73,13 @@ bool KeyboardHook::IsEnabled() const noexcept {
     return enabled_;
 }
 
+void KeyboardHook::SetTransformConfig(const core::TransformConfig config) noexcept {
+    engine_.SetConfig(config);
+    typo_checkpoint_.Invalidate();
+    suppressed_key_ups_.reset();
+    foreground_window_ = GetForegroundWindow();
+}
+
 LRESULT CALLBACK KeyboardHook::HookProcedure(const int code, const WPARAM message,
                                              const LPARAM data) noexcept {
     if (code < 0 || active_instance_ == nullptr) {

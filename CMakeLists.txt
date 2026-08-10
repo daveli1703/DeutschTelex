@@ -12,6 +12,16 @@ function(deutschtelex_enable_warnings target)
     endif()
 endfunction()
 
+add_library(deutschtelex_config
+    src/config/settings_store.cpp
+)
+target_include_directories(deutschtelex_config
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+target_compile_features(deutschtelex_config PUBLIC cxx_std_20)
+deutschtelex_enable_warnings(deutschtelex_config)
+
 add_library(deutschtelex_core
     src/core/transform_engine.cpp
 )
@@ -25,10 +35,13 @@ target_compile_features(deutschtelex_core PUBLIC cxx_std_20)
 deutschtelex_enable_warnings(deutschtelex_core)
 
 if(WIN32)
+    enable_language(RC)
+
     add_library(deutschtelex_win32
         src/win32/input_injector.cpp
         src/win32/key_decoder.cpp
         src/win32/keyboard_hook.cpp
+        src/win32/startup_registration.cpp
     )
 
     target_include_directories(deutschtelex_win32
@@ -37,10 +50,11 @@ if(WIN32)
     )
     target_compile_features(deutschtelex_win32 PUBLIC cxx_std_20)
     target_compile_definitions(deutschtelex_win32 PUBLIC UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
-    target_link_libraries(deutschtelex_win32 PUBLIC deutschtelex_core User32)
+    target_link_libraries(deutschtelex_win32 PUBLIC deutschtelex_core User32 Advapi32)
     deutschtelex_enable_warnings(deutschtelex_win32)
 
     add_library(deutschtelex_app
+        src/app/settings_window.cpp
         src/app/tray_app.cpp
     )
     target_include_directories(deutschtelex_app
@@ -48,10 +62,14 @@ if(WIN32)
             ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
     target_compile_features(deutschtelex_app PUBLIC cxx_std_20)
-    target_link_libraries(deutschtelex_app PUBLIC deutschtelex_win32 Shell32)
+    target_link_libraries(deutschtelex_app PUBLIC deutschtelex_config deutschtelex_win32
+        Shell32 Ole32)
     deutschtelex_enable_warnings(deutschtelex_app)
 
-    add_executable(DeutschTelex WIN32 src/main.cpp)
+    add_executable(DeutschTelex WIN32
+        src/main.cpp
+        src/resources/deutschtelex.rc
+    )
     target_compile_features(DeutschTelex PRIVATE cxx_std_20)
     target_link_libraries(DeutschTelex PRIVATE deutschtelex_app)
     if(MINGW)
@@ -63,6 +81,14 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    add_executable(deutschtelex_config_tests
+        tests/settings_store_tests.cpp
+    )
+    target_link_libraries(deutschtelex_config_tests PRIVATE deutschtelex_config)
+    target_compile_features(deutschtelex_config_tests PRIVATE cxx_std_20)
+    deutschtelex_enable_warnings(deutschtelex_config_tests)
+    add_test(NAME settings_store COMMAND deutschtelex_config_tests)
+
     add_executable(deutschtelex_core_tests
         tests/transform_engine_tests.cpp
     )
