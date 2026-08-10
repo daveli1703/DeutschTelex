@@ -40,11 +40,22 @@ if(WIN32)
     target_link_libraries(deutschtelex_win32 PUBLIC deutschtelex_core User32)
     deutschtelex_enable_warnings(deutschtelex_win32)
 
-    add_executable(DeutschTelex src/main.cpp)
+    add_library(deutschtelex_app
+        src/app/tray_app.cpp
+    )
+    target_include_directories(deutschtelex_app
+        PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    target_compile_features(deutschtelex_app PUBLIC cxx_std_20)
+    target_link_libraries(deutschtelex_app PUBLIC deutschtelex_win32 Shell32)
+    deutschtelex_enable_warnings(deutschtelex_app)
+
+    add_executable(DeutschTelex WIN32 src/main.cpp)
     target_compile_features(DeutschTelex PRIVATE cxx_std_20)
-    target_link_libraries(DeutschTelex PRIVATE deutschtelex_win32)
+    target_link_libraries(DeutschTelex PRIVATE deutschtelex_app)
     if(MINGW)
-        target_link_options(DeutschTelex PRIVATE -static -static-libgcc -static-libstdc++)
+        target_link_options(DeutschTelex PRIVATE -municode -static -static-libgcc -static-libstdc++)
     endif()
     deutschtelex_enable_warnings(DeutschTelex)
 endif()
@@ -67,7 +78,7 @@ if(BUILD_TESTING)
             tests/win32_component_tests.cpp
         )
         target_compile_features(deutschtelex_win32_tests PRIVATE cxx_std_20)
-        target_link_libraries(deutschtelex_win32_tests PRIVATE deutschtelex_win32)
+        target_link_libraries(deutschtelex_win32_tests PRIVATE deutschtelex_app)
         deutschtelex_enable_warnings(deutschtelex_win32_tests)
 
         add_test(NAME win32_components COMMAND deutschtelex_win32_tests)

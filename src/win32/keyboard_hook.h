@@ -30,6 +30,8 @@ public:
     [[nodiscard]] bool Install() noexcept;
     [[nodiscard]] bool Uninstall() noexcept;
     [[nodiscard]] DWORD LastErrorCode() const noexcept;
+    void SetEnabled(bool enabled) noexcept;
+    [[nodiscard]] bool IsEnabled() const noexcept;
 
 private:
     static LRESULT CALLBACK HookProcedure(int code, WPARAM message, LPARAM data) noexcept;
@@ -42,6 +44,7 @@ private:
     HHOOK hook_{};
     HWND foreground_window_{};
     DWORD last_error_{};
+    bool enabled_{true};
     core::TransformEngine engine_;
     core::SingleTypoCheckpoint typo_checkpoint_;
     ModifierState modifiers_;

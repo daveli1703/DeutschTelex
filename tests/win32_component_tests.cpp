@@ -1,3 +1,4 @@
+#include "app/tray_app.h"
 #include "core/transform_engine.h"
 #include "win32/input_injector.h"
 #include "win32/key_decoder.h"
@@ -11,6 +12,10 @@ namespace {
 
 using deutschtelex::core::Action;
 using deutschtelex::core::ActionKind;
+using deutschtelex::app::Command;
+using deutschtelex::app::CommandFromId;
+using deutschtelex::app::EnabledState;
+using deutschtelex::app::TooltipFor;
 using deutschtelex::win32::BuildReplacementBatch;
 using deutschtelex::win32::InjectionBatch;
 using deutschtelex::win32::InjectionOrigin;
@@ -45,6 +50,24 @@ bool AllEventsTagged(const InjectionBatch& batch, const ULONG_PTR marker) {
 
 int main() {
     TestRunner runner;
+
+    {
+        EnabledState enabled_state;
+        runner.Check(enabled_state.IsEnabled(), "enabled state defaults to ON");
+        runner.Check(!enabled_state.Toggle(), "first toggle changes enabled state to OFF");
+        runner.Check(!enabled_state.IsEnabled(), "enabled state reports OFF after toggle");
+        runner.Check(enabled_state.Toggle(), "second toggle changes enabled state to ON");
+        runner.Check(TooltipFor(true) == L"DeutschTelex \u2014 ON", "ON tooltip is accurate");
+        runner.Check(TooltipFor(false) == L"DeutschTelex \u2014 OFF", "OFF tooltip is accurate");
+        runner.Check(CommandFromId(deutschtelex::app::kCommandToggle) == Command::Toggle,
+                     "toggle command ID maps to Toggle");
+        runner.Check(CommandFromId(deutschtelex::app::kCommandAbout) == Command::About,
+                     "about command ID maps to About");
+        runner.Check(CommandFromId(deutschtelex::app::kCommandExit) == Command::Exit,
+                     "exit command ID maps to Exit");
+        runner.Check(CommandFromId(0) == Command::None,
+                     "unknown command ID maps to None");
+    }
 
     constexpr std::array reset_keys{
         VK_BACK, VK_DELETE, VK_RETURN, VK_TAB, VK_ESCAPE, VK_LEFT, VK_RIGHT,

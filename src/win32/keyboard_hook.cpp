@@ -59,6 +59,20 @@ DWORD KeyboardHook::LastErrorCode() const noexcept {
     return last_error_;
 }
 
+void KeyboardHook::SetEnabled(const bool enabled) noexcept {
+    enabled_ = enabled;
+    ResetEngineAndInvalidateCheckpoint();
+    suppressed_key_ups_.reset();
+    foreground_window_ = GetForegroundWindow();
+    if (enabled_) {
+        modifiers_.InitializeFromSystem();
+    }
+}
+
+bool KeyboardHook::IsEnabled() const noexcept {
+    return enabled_;
+}
+
 LRESULT CALLBACK KeyboardHook::HookProcedure(const int code, const WPARAM message,
                                              const LPARAM data) noexcept {
     if (code < 0 || active_instance_ == nullptr) {
@@ -80,6 +94,10 @@ LRESULT KeyboardHook::Handle(const WPARAM message, const KBDLLHOOKSTRUCT& event)
     const bool key_down = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
     const bool key_up = message == WM_KEYUP || message == WM_SYSKEYUP;
     if (!key_down && !key_up) {
+        return PassThrough(HC_ACTION, message, event_data);
+    }
+
+    if (!enabled_) {
         return PassThrough(HC_ACTION, message, event_data);
     }
 
