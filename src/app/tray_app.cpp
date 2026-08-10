@@ -67,6 +67,7 @@ bool TrayApp::Initialize(const bool smoke_test) noexcept {
     }
     settings_window_.emplace(instance_, window_, *this);
     hook_.SetTransformConfig({settings_.enable_eszett});
+    hook_.SetDisableInVisualStudioCode(settings_.disable_in_vscode);
     if (!hook_.Install()) {
         MessageBoxW(window_, L"DeutschTelex could not install the keyboard hook.",
                     kWindowTitle, MB_OK | MB_ICONERROR);
@@ -176,6 +177,9 @@ bool TrayApp::SaveSettings(const config::AppSettings& settings,
     settings_ = settings;
     if (settings_.enable_eszett != previous.enable_eszett) {
         hook_.SetTransformConfig({settings_.enable_eszett});
+    }
+    if (settings_.disable_in_vscode != previous.disable_in_vscode) {
+        hook_.SetDisableInVisualStudioCode(settings_.disable_in_vscode);
     }
     return true;
 }
@@ -381,7 +385,7 @@ void TrayApp::ShowAbout() noexcept {
     MessageBoxW(window_,
                 L"DeutschTelex\n\n"
                 L"A lightweight UniKey-inspired German Telex input method.\n\n"
-                L"Version 0.4 development build\n\n"
+                L"Version 0.5 development build\n\n"
                 L"ae -> \u00E4\noe -> \u00F6\nue -> \u00FC\nsz -> \u00DF\n\n"
                 L"No telemetry.\nNo typed-text logging.",
                 kWindowTitle, MB_OK | MB_ICONINFORMATION);

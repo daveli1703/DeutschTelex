@@ -46,6 +46,7 @@ private:
     HWND start_with_windows_{};
     HWND show_notifications_{};
     HWND enable_eszett_{};
+    HWND disable_in_vscode_{};
     config::AppSettings opening_settings_{};
 };
 

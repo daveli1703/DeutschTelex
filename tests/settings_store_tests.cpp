@@ -67,6 +67,7 @@ int main() {
     runner.Check(!defaults.start_with_windows, "Start with Windows defaults to false");
     runner.Check(defaults.show_toggle_notifications, "toggle notifications default to true");
     runner.Check(defaults.enable_eszett, "eszett mapping defaults to true");
+    runner.Check(!defaults.disable_in_vscode, "VS Code exclusion defaults to false");
     runner.Check(store.Load() == defaults, "missing settings file loads defaults");
 
     const SettingsStore nested_store{temporary.Path() / "missing" / "settings.ini"};
@@ -77,9 +78,12 @@ int main() {
     runner.Check(nested_store.Load() == AppSettings{true, false, true},
                  "settings round-trip through a newly created directory");
 
-    const AppSettings changed{true, false, false};
+    const AppSettings changed{true, false, false, false};
     runner.Check(store.Save(changed), "settings save succeeds");
     runner.Check(store.Load() == changed, "saved settings round-trip exactly");
+    const AppSettings vscode_excluded{false, true, true, true};
+    runner.Check(store.Save(vscode_excluded), "VS Code exclusion saves as true");
+    runner.Check(store.Load() == vscode_excluded, "VS Code exclusion true round-trips");
     runner.Check(!std::filesystem::exists(path.wstring() + L".tmp"),
                  "successful save leaves no temporary file");
 
@@ -90,13 +94,15 @@ int main() {
     WriteText(path,
               "[General]\nStartWithWindows=potato\nShowNotifications=false\n"
               "UnknownSetting=true\n\n[Input]\nEnableEszett=false\n"
+              "\n[Applications]\nDisableInVSCode=true\n"
               "[Future]\nSomething=true\n");
-    runner.Check(store.Load() == AppSettings{false, false, false},
+    runner.Check(store.Load() == AppSettings{false, false, false, true},
                  "partially valid file applies only valid known values");
 
     WriteText(path,
               "[General]\nStartWithWindows=potato\nShowNotifications=perhaps\n"
-              "[Input]\nEnableEszett=potato\n");
+              "[Input]\nEnableEszett=potato\n"
+              "[Applications]\nDisableInVSCode=potato\n");
     runner.Check(store.Load() == defaults,
                  "invalid Boolean values safely use defaults");
 

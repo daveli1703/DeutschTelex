@@ -83,6 +83,8 @@ AppSettings SettingsStore::Load() const noexcept {
                 settings.show_toggle_notifications = *value;
             } else if (section == "Input" && key == "EnableEszett") {
                 settings.enable_eszett = *value;
+            } else if (section == "Applications" && key == "DisableInVSCode") {
+                settings.disable_in_vscode = *value;
             }
         }
     } catch (...) {
@@ -113,7 +115,9 @@ bool SettingsStore::Save(const AppSettings& settings) const noexcept {
                    << "StartWithWindows=" << BooleanText(settings.start_with_windows) << '\n'
                    << "ShowNotifications=" << BooleanText(settings.show_toggle_notifications)
                    << "\n\n[Input]\n"
-                   << "EnableEszett=" << BooleanText(settings.enable_eszett) << '\n';
+                   << "EnableEszett=" << BooleanText(settings.enable_eszett)
+                   << "\n\n[Applications]\n"
+                   << "DisableInVSCode=" << BooleanText(settings.disable_in_vscode) << '\n';
             output.flush();
             if (!output) {
                 output.close();
