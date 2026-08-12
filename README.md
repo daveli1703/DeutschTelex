@@ -13,6 +13,7 @@ QWERTY keyboards using a native Win32 tray application.
 - Global `Ctrl+Alt+G` toggle
 - Optional Start with Windows
 - Optional Visual Studio Code exclusion
+- Same-window mouse/caret safety reset
 - Local-only processing with no telemetry or typed-text logging
 
 ## Typing rules
@@ -48,21 +49,26 @@ e
 The visible result is `ä`. Deleting the one accidental printable character
 restores the pending Telex prefix without reading the target application's text.
 
+Clicking or scrolling resets pending transformation and typo-checkpoint state.
+This prevents a prefix typed at one caret location from modifying unrelated text
+after the caret is moved within the same application. Mouse coordinates and
+mouse-event history are never retained.
+
 ## Installation
 
 When an installer artifact is available, run
-`DeutschTelex-0.6.0-win64-setup.exe`. It installs per user under
+`DeutschTelex-0.7.0-win64-setup.exe`. It installs per user under
 `%LOCALAPPDATA%\Programs\DeutschTelex`, creates a Start Menu shortcut, and does
 not require administrator privileges. Start with Windows is not enabled by the
 installer; control it from DeutschTelex Settings.
 
-DeutschTelex 0.6.0 development artifacts are unsigned. Windows SmartScreen may
+DeutschTelex 0.7.0 development artifacts are unsigned. Windows SmartScreen may
 warn about an unknown publisher. Do not disable Windows security globally; only
 continue if the artifact came from a source you trust.
 
 ## Portable version
 
-Extract `DeutschTelex-0.6.0-win64-portable.zip`, then run `DeutschTelex.exe`.
+Extract `DeutschTelex-0.7.0-win64-portable.zip`, then run `DeutschTelex.exe`.
 Portable use still stores preferences in
 `%LOCALAPPDATA%\DeutschTelex\settings.ini`.
 
@@ -115,7 +121,10 @@ Requirements:
 - Ninja or another CMake-supported build tool
 
 MinGW/GCC 15.2.0 is currently verified. MSVC warning configuration is present,
-but this release has not been verified with MSVC.
+but this release has not been verified with MSVC. Interactive application and
+Windows-version results are tracked in
+[docs/compatibility.md](docs/compatibility.md); untested targets are not claimed
+as compatible.
 
 ```powershell
 cmake -S . -B build -G Ninja -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
@@ -127,5 +136,4 @@ For portable release creation, see [docs/release-build.md](docs/release-build.md
 
 ## License
 
-This repository does not yet contain a LICENSE file. A license must be selected
-by the repository owner before a public source or binary release is distributed.
+DeutschTelex is released under the [MIT License](LICENSE).

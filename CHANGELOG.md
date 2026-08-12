@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0]
+
+### Added
+
+- MIT License and license inclusion in release packages
+- Deterministic property and long-stream transformation tests
+- Same-window mouse/caret safety reset
+- Compatibility and Phase 7 validation reports
+
+### Changed
+
+- Release validation now audits binary mitigations, dependencies, privacy, and paths
+
 ## [0.6.0]
 
 ### Added

@@ -87,6 +87,13 @@ int main() {
     runner.Check(!std::filesystem::exists(path.wstring() + L".tmp"),
                  "successful save leaves no temporary file");
 
+    WriteText(path.wstring() + L".tmp", "stale incomplete settings");
+    runner.Check(store.Save(changed),
+                 "stale temporary file does not prevent atomic save");
+    runner.Check(store.Load() == changed &&
+                     !std::filesystem::exists(path.wstring() + L".tmp"),
+                 "atomic save replaces and removes stale temporary file");
+
     WriteText(path, "[General]\nShowNotifications=false\n");
     runner.Check(store.Load() == AppSettings{false, false, true},
                  "missing keys retain individual defaults");

@@ -25,6 +25,9 @@ struct InjectionBatch {
     const core::Action& action,
     ULONG_PTR marker = kDeutschTelexInjectionMarker) noexcept;
 
+// SendInput is successful only when it inserts the complete prebuilt batch.
+[[nodiscard]] bool IsCompleteInjection(UINT expected, UINT inserted) noexcept;
+
 class InputInjector {
 public:
     [[nodiscard]] bool Inject(const core::Action& action) const noexcept;

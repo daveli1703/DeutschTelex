@@ -4,6 +4,7 @@
 #include "win32/input_injector.h"
 #include "win32/key_decoder.h"
 #include "win32/keyboard_hook.h"
+#include "win32/mouse_reset_hook.h"
 #include "win32/startup_registration.h"
 
 #include <array>
@@ -25,6 +26,7 @@ using deutschtelex::win32::ForegroundContextCache;
 using deutschtelex::win32::InjectionBatch;
 using deutschtelex::win32::InjectionOrigin;
 using deutschtelex::win32::IsResetKey;
+using deutschtelex::win32::SuppressedKeyUps;
 using deutschtelex::win32::ModifierEvent;
 using deutschtelex::win32::ModifierState;
 
@@ -280,6 +282,12 @@ int main() {
 
     runner.Check(!BuildReplacementBatch(Action::Pass(), marker).has_value(),
                  "Pass action is not injectable");
+    runner.Check(deutschtelex::win32::IsCompleteInjection(4U, 4U),
+                 "complete SendInput batch is accepted");
+    runner.Check(!deutschtelex::win32::IsCompleteInjection(4U, 0U) &&
+                     !deutschtelex::win32::IsCompleteInjection(4U, 3U) &&
+                     !deutschtelex::win32::IsCompleteInjection(0U, 0U),
+                 "zero and partial SendInput results are rejected");
     constexpr char32_t isolated_surrogate[] = {static_cast<char32_t>(0xD800U)};
     runner.Check(!BuildReplacementBatch(
                       Action{ActionKind::ReplacePrevious,
@@ -306,6 +314,47 @@ int main() {
         runner.Check(deutschtelex::win32::ClassifyInjection(event) ==
                          InjectionOrigin::DeutschTelex,
                      "own marker takes priority over injected flag");
+    }
+
+    constexpr std::array mouse_reset_messages{
+        WM_LBUTTONDOWN, WM_RBUTTONDOWN, WM_MBUTTONDOWN,
+        WM_XBUTTONDOWN, WM_MOUSEWHEEL, WM_MOUSEHWHEEL,
+    };
+    for (const WPARAM message : mouse_reset_messages) {
+        runner.Check(deutschtelex::win32::IsMouseContextResetMessage(message),
+                     "caret-affecting mouse gesture resets text context");
+    }
+    constexpr std::array mouse_passthrough_messages{
+        WM_MOUSEMOVE, WM_LBUTTONUP, WM_RBUTTONUP, WM_MBUTTONUP, WM_XBUTTONUP,
+    };
+    for (const WPARAM message : mouse_passthrough_messages) {
+        runner.Check(!deutschtelex::win32::IsMouseContextResetMessage(message),
+                     "non-editing mouse event does not perform reset work");
+    }
+
+    {
+        SuppressedKeyUps suppressed;
+        suppressed.Suppress('E');
+        runner.Check(suppressed.Contains('E'),
+                     "transformation trigger remembers suppressed key-up");
+        runner.Check(suppressed.ConsumeKeyUp('E') && !suppressed.Contains('E'),
+                     "normal trigger key-up is consumed exactly once");
+        runner.Check(!suppressed.ConsumeKeyUp('E'),
+                     "consumed trigger key-up cannot remain stuck");
+
+        suppressed.Suppress('E');
+        suppressed.PassedKeyDown('E');
+        runner.Check(!suppressed.ConsumeKeyUp('E'),
+                     "passed auto-repeat clears stale key-up suppression");
+
+        suppressed.Suppress('Z');
+        suppressed.Clear();
+        runner.Check(!suppressed.Contains('Z'),
+                     "lifecycle reset clears all suppressed key-ups");
+        suppressed.Suppress(300U);
+        runner.Check(!suppressed.Contains(300U) &&
+                         !suppressed.ConsumeKeyUp(300U),
+                     "out-of-range virtual key is safely ignored");
     }
 
     std::cout << runner.passed << " tests passed; " << runner.failed

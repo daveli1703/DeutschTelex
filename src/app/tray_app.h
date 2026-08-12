@@ -4,6 +4,7 @@
 #include "config/app_settings.h"
 #include "config/settings_store.h"
 #include "win32/keyboard_hook.h"
+#include "win32/mouse_reset_hook.h"
 #include "win32/startup_registration.h"
 
 #include <filesystem>
@@ -96,6 +97,7 @@ private:
     HANDLE instance_mutex_{};
     HICON tray_icon_{};
     win32::KeyboardHook hook_;
+    win32::MouseResetHook mouse_reset_hook_;
     EnabledState enabled_state_;
     config::AppSettings settings_{};
     std::optional<config::SettingsStore> settings_store_;

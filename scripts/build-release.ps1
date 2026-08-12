@@ -164,9 +164,17 @@ $peDetails = & $ObjdumpPath -p $executable
 if ($LASTEXITCODE -ne 0) {
     throw "Could not inspect DeutschTelex.exe PE metadata."
 }
-if (($peDetails | Out-String) -notmatch 'Subsystem\s+00000002\s+\(Windows GUI\)') {
+$peText = $peDetails | Out-String
+if ($peText -notmatch 'Subsystem\s+00000002\s+\(Windows GUI\)') {
     throw "DeutschTelex.exe is not using the Windows GUI subsystem."
 }
+$requiredMitigations = @("HIGH_ENTROPY_VA", "DYNAMIC_BASE", "NX_COMPAT")
+foreach ($mitigation in $requiredMitigations) {
+    if ($peText -notmatch [regex]::Escape($mitigation)) {
+        throw "DeutschTelex.exe is missing required PE mitigation $mitigation."
+    }
+}
+$controlFlowGuard = if ($peText -match 'GUARD_CF') { "enabled" } else { "not present" }
 
 $importedDlls = @($peDetails | ForEach-Object {
     if ($_ -match 'DLL Name:\s*(\S+)') { $Matches[1] }
@@ -188,8 +196,13 @@ $nonSystemDlls = @($importedDlls | Where-Object {
 New-Item -ItemType Directory -Path $stageDirectory | Out-Null
 Copy-Item -LiteralPath $executable -Destination (Join-Path $stageDirectory "DeutschTelex.exe")
 Copy-Item -LiteralPath (Join-Path $repoRoot "README.md") -Destination $stageDirectory
+Copy-Item -LiteralPath (Join-Path $repoRoot "LICENSE") -Destination $stageDirectory
 Copy-Item -LiteralPath (Join-Path $repoRoot "CHANGELOG.md") -Destination $stageDirectory
-Copy-Item -LiteralPath (Join-Path $repoRoot "docs\release-0.6.0.md") `
+$releaseNotes = Join-Path $repoRoot "docs\release-$releaseVersion.md"
+if (-not (Test-Path -LiteralPath $releaseNotes)) {
+    throw "Release notes are missing for version $releaseVersion."
+}
+Copy-Item -LiteralPath $releaseNotes `
     -Destination (Join-Path $stageDirectory "RELEASE-NOTES.md")
 
 $runtimeSearchDirectories = @((Split-Path -Parent $executable))
@@ -216,6 +229,8 @@ $dependencyReport = @(
     "Architecture: Windows x64",
     "Subsystem: Windows GUI",
     "Runtime strategy: static libgcc/libstdc++ when built with MinGW",
+    "PE mitigations: High Entropy VA, Dynamic Base/ASLR, NX/DEP",
+    "Control Flow Guard: $controlFlowGuard",
     "",
     "Imported Windows DLLs:"
 ) + ($importedDlls | ForEach-Object { "- $_" }) + @(
@@ -241,6 +256,22 @@ try {
     } | Select-Object -First 1
     if ($unexpectedEntry) {
         throw "Portable ZIP does not contain exactly one release root directory."
+    }
+    $actualEntries = @($archive.Entries | ForEach-Object {
+        $_.FullName.Replace('\', '/')
+    } | Where-Object { $_ } | Sort-Object)
+    $expectedEntries = @(
+        "$releaseDirectoryName/DeutschTelex.exe",
+        "$releaseDirectoryName/README.md",
+        "$releaseDirectoryName/LICENSE",
+        "$releaseDirectoryName/CHANGELOG.md",
+        "$releaseDirectoryName/RELEASE-NOTES.md",
+        "$releaseDirectoryName/RUNTIME-DEPENDENCIES.txt"
+    ) + @($nonSystemDlls | ForEach-Object { "$releaseDirectoryName/$_" })
+    $expectedEntries = @($expectedEntries | Sort-Object)
+    if (Compare-Object -ReferenceObject $expectedEntries `
+                       -DifferenceObject $actualEntries) {
+        throw "Portable ZIP contents differ from the explicit release allowlist."
     }
 } finally {
     $archive.Dispose()
@@ -286,6 +317,3 @@ Write-Host "Portable directory: $stageDirectory"
 Write-Host "Portable ZIP: $portableArchive"
 Write-Host "Installer: $installerStatus"
 Write-Host "Checksums: $checksumsPath"
-if (-not (Test-Path -LiteralPath (Join-Path $repoRoot "LICENSE"))) {
-    Write-Warning "No LICENSE file exists. Select a license before public distribution."
-}

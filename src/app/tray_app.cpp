@@ -76,6 +76,13 @@ bool TrayApp::Initialize(const bool smoke_test) noexcept {
         Shutdown();
         return false;
     }
+    if (!mouse_reset_hook_.Install(hook_)) {
+        MessageBoxW(window_,
+                    L"DeutschTelex could not install its mouse context-reset hook.",
+                    kWindowTitle, MB_OK | MB_ICONERROR);
+        Shutdown();
+        return false;
+    }
     if (!AddTrayIcon()) {
         MessageBoxW(window_, L"DeutschTelex could not create its tray icon.",
                     kWindowTitle, MB_OK | MB_ICONERROR);
@@ -117,6 +124,7 @@ void TrayApp::Shutdown() noexcept {
     }
     shutting_down_ = true;
 
+    static_cast<void>(mouse_reset_hook_.Uninstall());
     hook_.SetEnabled(false);
     static_cast<void>(hook_.Uninstall());
     if (hotkey_registered_) {

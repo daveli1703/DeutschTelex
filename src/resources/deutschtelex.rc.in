@@ -24,7 +24,7 @@ BEGIN
             VALUE "FileDescription", "DeutschTelex German Telex Input Method\0"
             VALUE "FileVersion", "@PROJECT_VERSION@.0\0"
             VALUE "InternalName", "DeutschTelex\0"
-            VALUE "LegalCopyright", "Copyright (c) DeutschTelex contributors\0"
+            VALUE "LegalCopyright", "Copyright (c) 2026 Hung (daveli1703)\0"
             VALUE "OriginalFilename", "DeutschTelex.exe\0"
             VALUE "ProductName", "DeutschTelex\0"
             VALUE "ProductVersion", "@PROJECT_VERSION@\0"

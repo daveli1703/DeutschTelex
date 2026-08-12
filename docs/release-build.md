@@ -31,7 +31,7 @@ The script:
 4. verifies version metadata and Windows x64 GUI subsystem;
 5. inspects imported runtime DLLs;
 6. stages only user-facing files;
-7. creates `dist\DeutschTelex-0.6.0-win64-portable.zip`;
+7. creates `dist\DeutschTelex-0.7.0-win64-portable.zip`;
 8. builds the installer when Inno Setup 6 is available.
 
 ## Installer
@@ -40,7 +40,7 @@ CMake configures `generated\DeutschTelex.iss` in the release build directory.
 Install Inno Setup 6 separately, then rerun the release script to produce:
 
 ```text
-dist\DeutschTelex-0.6.0-win64-setup.exe
+dist\DeutschTelex-0.7.0-win64-setup.exe
 ```
 
 The installer is per-user and targets
@@ -53,3 +53,7 @@ and removes only a matching installed-path startup entry.
 No code-signing certificate is configured. The produced executable and installer
 are unsigned development artifacts. Authentic signing can be added later; never
 store private signing keys in the repository.
+
+The future signing order is: build, automated tests, sign the executable,
+package, sign the installer, generate SHA-256 checksums, then publish the GitHub
+Release.

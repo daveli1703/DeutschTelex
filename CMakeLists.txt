@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(DeutschTelex VERSION 0.6.0 LANGUAGES CXX)
+project(DeutschTelex VERSION 0.7.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -66,6 +66,7 @@ if(WIN32)
         src/win32/input_injector.cpp
         src/win32/key_decoder.cpp
         src/win32/keyboard_hook.cpp
+        src/win32/mouse_reset_hook.cpp
         src/win32/startup_registration.cpp
     )
 
@@ -131,6 +132,14 @@ if(BUILD_TESTING)
     deutschtelex_enable_warnings(deutschtelex_core_tests)
 
     add_test(NAME transform_engine COMMAND deutschtelex_core_tests)
+
+    add_executable(deutschtelex_core_property_tests
+        tests/transform_engine_property_tests.cpp
+    )
+    target_link_libraries(deutschtelex_core_property_tests PRIVATE deutschtelex_core)
+    target_compile_features(deutschtelex_core_property_tests PRIVATE cxx_std_20)
+    deutschtelex_enable_warnings(deutschtelex_core_property_tests)
+    add_test(NAME transform_engine_properties COMMAND deutschtelex_core_property_tests)
 
     if(WIN32)
         add_executable(deutschtelex_win32_tests

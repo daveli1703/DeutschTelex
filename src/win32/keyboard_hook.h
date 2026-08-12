@@ -17,6 +17,18 @@ enum class InjectionOrigin {
     Foreign,
 };
 
+class SuppressedKeyUps {
+public:
+    void Suppress(DWORD virtual_key) noexcept;
+    void PassedKeyDown(DWORD virtual_key) noexcept;
+    [[nodiscard]] bool ConsumeKeyUp(DWORD virtual_key) noexcept;
+    void Clear() noexcept;
+    [[nodiscard]] bool Contains(DWORD virtual_key) const noexcept;
+
+private:
+    std::bitset<256> keys_;
+};
+
 [[nodiscard]] InjectionOrigin ClassifyInjection(
     const KBDLLHOOKSTRUCT& event) noexcept;
 
@@ -35,6 +47,10 @@ public:
     [[nodiscard]] bool IsEnabled() const noexcept;
     void SetTransformConfig(core::TransformConfig config) noexcept;
     void SetDisableInVisualStudioCode(bool disabled) noexcept;
+
+    // Invalidates only text-context state after a same-window caret gesture.
+    // Suppressed physical key-up bookkeeping remains intact.
+    void ResetTextContext() noexcept;
 
 private:
     static LRESULT CALLBACK HookProcedure(int code, WPARAM message, LPARAM data) noexcept;
@@ -58,7 +74,7 @@ private:
     // A bit is set only when a physical key-down was suppressed. Its matching
     // key-up is suppressed too. If an auto-repeat key-down is later passed,
     // the bit is cleared so the destination receives the eventual key-up.
-    std::bitset<256> suppressed_key_ups_;
+    SuppressedKeyUps suppressed_key_ups_;
 };
 
 }  // namespace deutschtelex::win32

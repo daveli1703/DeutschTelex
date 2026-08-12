@@ -4,6 +4,34 @@ namespace deutschtelex::win32 {
 
 KeyboardHook* KeyboardHook::active_instance_ = nullptr;
 
+void SuppressedKeyUps::Suppress(const DWORD virtual_key) noexcept {
+    if (virtual_key < keys_.size()) {
+        keys_.set(virtual_key);
+    }
+}
+
+void SuppressedKeyUps::PassedKeyDown(const DWORD virtual_key) noexcept {
+    if (virtual_key < keys_.size()) {
+        keys_.reset(virtual_key);
+    }
+}
+
+bool SuppressedKeyUps::ConsumeKeyUp(const DWORD virtual_key) noexcept {
+    if (virtual_key >= keys_.size() || !keys_.test(virtual_key)) {
+        return false;
+    }
+    keys_.reset(virtual_key);
+    return true;
+}
+
+void SuppressedKeyUps::Clear() noexcept {
+    keys_.reset();
+}
+
+bool SuppressedKeyUps::Contains(const DWORD virtual_key) const noexcept {
+    return virtual_key < keys_.size() && keys_.test(virtual_key);
+}
+
 InjectionOrigin ClassifyInjection(const KBDLLHOOKSTRUCT& event) noexcept {
     if (event.dwExtraInfo == kDeutschTelexInjectionMarker) {
         return InjectionOrigin::DeutschTelex;
@@ -23,7 +51,7 @@ bool KeyboardHook::Install() noexcept {
     }
 
     ResetEngineAndInvalidateCheckpoint();
-    suppressed_key_ups_.reset();
+    suppressed_key_ups_.Clear();
     RefreshForegroundContext();
     modifiers_.InitializeFromSystem();
 
@@ -51,7 +79,7 @@ bool KeyboardHook::Uninstall() noexcept {
         active_instance_ = nullptr;
     }
     ResetEngineAndInvalidateCheckpoint();
-    suppressed_key_ups_.reset();
+    suppressed_key_ups_.Clear();
     foreground_context_.Clear();
     return succeeded;
 }
@@ -63,7 +91,7 @@ DWORD KeyboardHook::LastErrorCode() const noexcept {
 void KeyboardHook::SetEnabled(const bool enabled) noexcept {
     enabled_ = enabled;
     ResetEngineAndInvalidateCheckpoint();
-    suppressed_key_ups_.reset();
+    suppressed_key_ups_.Clear();
     RefreshForegroundContext();
     if (enabled_) {
         modifiers_.InitializeFromSystem();
@@ -77,16 +105,20 @@ bool KeyboardHook::IsEnabled() const noexcept {
 void KeyboardHook::SetTransformConfig(const core::TransformConfig config) noexcept {
     engine_.SetConfig(config);
     typo_checkpoint_.Invalidate();
-    suppressed_key_ups_.reset();
+    suppressed_key_ups_.Clear();
     RefreshForegroundContext();
 }
 
 void KeyboardHook::SetDisableInVisualStudioCode(const bool disabled) noexcept {
     disable_in_vscode_ = disabled;
     ResetEngineAndInvalidateCheckpoint();
-    suppressed_key_ups_.reset();
+    suppressed_key_ups_.Clear();
     RefreshForegroundContext();
     modifiers_.InitializeFromSystem();
+}
+
+void KeyboardHook::ResetTextContext() noexcept {
+    ResetEngineAndInvalidateCheckpoint();
 }
 
 LRESULT CALLBACK KeyboardHook::HookProcedure(const int code, const WPARAM message,
@@ -134,13 +166,12 @@ LRESULT KeyboardHook::Handle(const WPARAM message, const KBDLLHOOKSTRUCT& event)
 
     if (ShouldBypassInput(enabled_, disable_in_vscode_, foreground_context_.Identity())) {
         static_cast<void>(modifiers_.Update(event.vkCode, key_down));
-        if (event.vkCode < suppressed_key_ups_.size()) {
-            if (key_up && suppressed_key_ups_.test(event.vkCode)) {
-                suppressed_key_ups_.reset(event.vkCode);
+        if (event.vkCode < 256U) {
+            if (key_up && suppressed_key_ups_.ConsumeKeyUp(event.vkCode)) {
                 return 1;
             }
             if (key_down) {
-                suppressed_key_ups_.reset(event.vkCode);
+                suppressed_key_ups_.PassedKeyDown(event.vkCode);
             }
         }
         return PassThrough(HC_ACTION, message, event_data);
@@ -156,9 +187,7 @@ LRESULT KeyboardHook::Handle(const WPARAM message, const KBDLLHOOKSTRUCT& event)
     }
 
     if (key_up) {
-        if (event.vkCode < suppressed_key_ups_.size() &&
-            suppressed_key_ups_.test(event.vkCode)) {
-            suppressed_key_ups_.reset(event.vkCode);
+        if (suppressed_key_ups_.ConsumeKeyUp(event.vkCode)) {
             return 1;
         }
         return PassThrough(HC_ACTION, message, event_data);
@@ -186,23 +215,17 @@ LRESULT KeyboardHook::Handle(const WPARAM message, const KBDLLHOOKSTRUCT& event)
     const core::Action action = engine_.Process(*character);
     typo_checkpoint_.CompletePrintable(action);
     if (action.kind == core::ActionKind::Pass) {
-        if (event.vkCode < suppressed_key_ups_.size()) {
-            suppressed_key_ups_.reset(event.vkCode);
-        }
+        suppressed_key_ups_.PassedKeyDown(event.vkCode);
         return PassThrough(HC_ACTION, message, event_data);
     }
 
     if (!injector_.Inject(action)) {
         ResetEngineAndInvalidateCheckpoint();
-        if (event.vkCode < suppressed_key_ups_.size()) {
-            suppressed_key_ups_.reset(event.vkCode);
-        }
+        suppressed_key_ups_.PassedKeyDown(event.vkCode);
         return PassThrough(HC_ACTION, message, event_data);
     }
 
-    if (event.vkCode < suppressed_key_ups_.size()) {
-        suppressed_key_ups_.set(event.vkCode);
-    }
+    suppressed_key_ups_.Suppress(event.vkCode);
     return 1;
 }
 

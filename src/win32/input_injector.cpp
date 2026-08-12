@@ -65,6 +65,10 @@ std::optional<InjectionBatch> BuildReplacementBatch(const core::Action& action,
     return batch;
 }
 
+bool IsCompleteInjection(const UINT expected, const UINT inserted) noexcept {
+    return expected != 0U && inserted == expected;
+}
+
 bool InputInjector::Inject(const core::Action& action) const noexcept {
     std::optional<InjectionBatch> batch = BuildReplacementBatch(action);
     if (!batch.has_value()) {
@@ -72,7 +76,7 @@ bool InputInjector::Inject(const core::Action& action) const noexcept {
     }
 
     const UINT inserted = SendInput(batch->count, batch->events.data(), sizeof(INPUT));
-    return inserted == batch->count;
+    return IsCompleteInjection(batch->count, inserted);
 }
 
 }  // namespace deutschtelex::win32
