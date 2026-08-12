@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(DeutschTelex VERSION 0.7.0 LANGUAGES CXX)
+project(DeutschTelex VERSION 0.8.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -56,6 +56,11 @@ if(WIN32)
         @ONLY
     )
     configure_file(
+        src/resources/deutschtelex.manifest.in
+        "${DEUTSCHTELEX_GENERATED_DIR}/deutschtelex.manifest"
+        @ONLY
+    )
+    configure_file(
         installer/DeutschTelex.iss.in
         "${DEUTSCHTELEX_GENERATED_DIR}/DeutschTelex.iss"
         @ONLY
@@ -89,7 +94,7 @@ if(WIN32)
     )
     target_compile_features(deutschtelex_app PUBLIC cxx_std_20)
     target_link_libraries(deutschtelex_app PUBLIC deutschtelex_config deutschtelex_win32
-        deutschtelex_version Shell32 Ole32)
+        deutschtelex_version Shell32 Ole32 UxTheme)
     deutschtelex_enable_warnings(deutschtelex_app)
 
     add_executable(DeutschTelex WIN32

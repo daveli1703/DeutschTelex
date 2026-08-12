@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0]
+
+### Changed
+
+- Modernized the native Win32 Settings window with clearer visual hierarchy
+- Added per-monitor DPI scaling with compatibility fallbacks for Windows 10
+- Enabled current Windows Common Controls visual styles
+
 ## [0.7.0]
 
 ### Added
