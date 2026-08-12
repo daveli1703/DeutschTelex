@@ -16,6 +16,10 @@ QWERTY keyboards using a native Win32 tray application.
 - Same-window mouse/caret safety reset
 - Local-only processing with no telemetry or typed-text logging
 
+## Settings interface
+
+![DeutschTelex Settings window showing startup, notifications, eszett, Visual Studio Code exclusion, and global shortcut options](docs/images/deutschtelex-settings.png)
+
 ## Typing rules
 
 | Input | Output |
