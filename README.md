@@ -61,18 +61,18 @@ mouse-event history are never retained.
 ## Installation
 
 When an installer artifact is available, run
-`DeutschTelex-0.7.0-win64-setup.exe`. It installs per user under
+`DeutschTelex-0.8.0-win64-setup.exe`. It installs per user under
 `%LOCALAPPDATA%\Programs\DeutschTelex`, creates a Start Menu shortcut, and does
 not require administrator privileges. Start with Windows is not enabled by the
 installer; control it from DeutschTelex Settings.
 
-DeutschTelex 0.7.0 development artifacts are unsigned. Windows SmartScreen may
+DeutschTelex 0.8.0 beta artifacts are unsigned. Windows SmartScreen may
 warn about an unknown publisher. Do not disable Windows security globally; only
 continue if the artifact came from a source you trust.
 
 ## Portable version
 
-Extract `DeutschTelex-0.7.0-win64-portable.zip`, then run `DeutschTelex.exe`.
+Extract `DeutschTelex-0.8.0-win64-portable.zip`, then run `DeutschTelex.exe`.
 Portable use still stores preferences in
 `%LOCALAPPDATA%\DeutschTelex\settings.ini`.
 

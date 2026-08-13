@@ -1,4 +1,4 @@
-# DeutschTelex 0.7.0 compatibility
+# DeutschTelex 0.8.0 compatibility
 
 Statuses are evidence-based:
 
@@ -9,12 +9,13 @@ Statuses are evidence-based:
 
 Automated component tests and a hook-lifecycle smoke test are not treated as
 proof of interactive application compatibility. Phase 5 and earlier behavior
-was manually accepted on the development machine, but 0.7.0 adds a mouse reset
-hook and therefore requires fresh interactive acceptance.
+was manually accepted on the development machine. Version 0.8.0 leaves the
+typing engine and hook behavior unchanged, but the refreshed Settings interface
+and release artifacts still require beta feedback on other machines.
 
 | Application | Version | Basic typing | Escape | Typo recovery | Hotkey | Notes |
 |---|---|---:|---:|---:|---:|---|
-| Notepad | Not recorded | NOT TESTED | NOT TESTED | NOT TESTED | NOT TESTED | Retest 0.7.0, including clicking elsewhere after a partial prefix. |
+| Notepad | Not recorded | NOT TESTED | NOT TESTED | NOT TESTED | NOT TESTED | Test 0.8.0, including clicking elsewhere after a partial prefix. |
 | Windows Search | Not recorded | NOT TESTED | NOT TESTED | NOT TESTED | NOT TESTED | Do not test sensitive searches. |
 | Run dialog | Not recorded | NOT TESTED | NOT TESTED | NOT TESTED | NOT TESTED | No private paths should be recorded in results. |
 | File Explorer rename | Not recorded | NOT TESTED | NOT TESTED | NOT TESTED | NOT TESTED | Test a disposable filename. |

@@ -31,7 +31,7 @@ The script:
 4. verifies version metadata and Windows x64 GUI subsystem;
 5. inspects imported runtime DLLs;
 6. stages only user-facing files;
-7. creates `dist\DeutschTelex-0.7.0-win64-portable.zip`;
+7. creates `dist\DeutschTelex-<version>-win64-portable.zip`;
 8. builds the installer when Inno Setup 6 is available.
 
 ## Installer
@@ -40,7 +40,7 @@ CMake configures `generated\DeutschTelex.iss` in the release build directory.
 Install Inno Setup 6 separately, then rerun the release script to produce:
 
 ```text
-dist\DeutschTelex-0.7.0-win64-setup.exe
+dist\DeutschTelex-<version>-win64-setup.exe
 ```
 
 The installer is per-user and targets
