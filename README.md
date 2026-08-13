@@ -60,6 +60,9 @@ mouse-event history are never retained.
 
 ## Installation
 
+Download the installer, portable ZIP, and integrity hashes from the
+[DeutschTelex 0.8.0 public beta release](https://github.com/daveli1703/DeutschTelex/releases/tag/v0.8.0).
+
 When an installer artifact is available, run
 `DeutschTelex-0.8.0-win64-setup.exe`. It installs per user under
 `%LOCALAPPDATA%\Programs\DeutschTelex`, creates a Start Menu shortcut, and does

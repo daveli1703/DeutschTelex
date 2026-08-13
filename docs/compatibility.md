@@ -41,6 +41,22 @@ and release artifacts still require beta feedback on other machines.
 | Windows 11 x64 | NOT TESTED | Automated development build and hook smoke test are not interactive acceptance. |
 | Windows 10 x64 | NOT TESTED | No Windows 10 machine was available during automated Phase 7 work. |
 
+## 0.8.0 release artifact verification
+
+The following checks were completed on the Windows 11 development machine on
+2026-08-13. They validate packaging and lifecycle behavior, not interactive
+compatibility with every target application.
+
+| Check | Status | Evidence |
+|---|---|---|
+| Clean Release build and CTest | PASS | All 6 test targets passed. |
+| Portable ZIP allowlist and extraction | PASS | The archive contained only the expected release files. |
+| Portable hook lifecycle | PASS | The extracted executable passed `--hook-smoke-test`. |
+| Per-user installer | PASS | Silent test installation produced version 0.8.0.0 and the expected files. |
+| Installed hook lifecycle | PASS | The installed executable passed `--hook-smoke-test`. |
+| Uninstaller cleanup | PASS | The executable, Start Menu shortcut, and uninstall registry entry were removed. |
+| Published downloads | PASS | Installer, portable ZIP, and checksum URLs returned the expected byte counts. |
+
 ## Known platform boundaries
 
 - Elevated targets may reject input from non-elevated DeutschTelex due to UIPI.
